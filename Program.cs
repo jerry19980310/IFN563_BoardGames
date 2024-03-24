@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Xml.Linq;
 using static BoardGames.Program;
@@ -149,9 +150,9 @@ namespace BoardGames
 
     public class History
     {
-        public Move MoveList;
-        public Player Player;
-        public BoardGame BoardGame;
+        public Move MoveList { get; set; }
+        public Player Player { get; set; }
+        public int BoardID { get; set; }
 
     }
 
@@ -225,7 +226,7 @@ namespace BoardGames
 
         public void RemovePiece(int col, int row)
         {
-            Board[row, col] = " ";
+            Board[row, col] = null;
         }
 
     }
@@ -347,7 +348,7 @@ namespace BoardGames
 
         }
 
-        public static List<History> WriteMoveRecords(List<History> history, Move currentMove, Player player, BoardGame boardgame)
+        public static List<History> WriteMoveRecords(List<History> history, Move currentMove, Player player, int boardID)
         {
 
             History newRecord = new History();
@@ -356,7 +357,7 @@ namespace BoardGames
 
             newRecord.Player = player;
 
-            newRecord.BoardGame = boardgame;
+            newRecord.BoardID = boardID;
 
             history.Add(newRecord);
 
@@ -401,8 +402,8 @@ namespace BoardGames
             bool isValid;
 
             bool winner = false;
-
-
+            
+            int option = 0;
 
             while (!winner)
             {
@@ -418,17 +419,15 @@ namespace BoardGames
                     {
                         game.Players[currentID].MakeMoveForTreblecross(game.BoardGame.Board.GetLength(1));
                         isValid = game.BoardGame.CheckSquare(game.Players[currentID].CurrentMove.Col, game.Players[currentID].CurrentMove.Row);
-                        if (!isValid) Console.WriteLine("Cannot place here");
+                        if (!isValid && game.Players[currentID].Type == "Human") Console.WriteLine("Cannot place here");
 
                     } while (!isValid);
 
                     game.BoardGame.PlacePiece(game.Players[currentID].CurrentMove.Col, game.Players[currentID].CurrentMove.Row);
 
-                    history = WriteMoveRecords(history, game.Players[currentID].CurrentMove, game.Players[currentID], game.BoardGame);
+                    history = WriteMoveRecords(history, game.Players[currentID].CurrentMove, game.Players[currentID], game.BoardGame.ID);
 
                     game.BoardGame.PrintBoard();
-
-                    Console.WriteLine(history.Count());
 
                     //DisplayHistory(history);
 
@@ -436,7 +435,7 @@ namespace BoardGames
                     {
                         do
                         {
-                            int option = game.Players[currentID].PlayerMenu();
+                            option = game.Players[currentID].PlayerMenu();
 
                             History undo = new History();
 
@@ -481,7 +480,7 @@ namespace BoardGames
 
                                                 game.BoardGame.PlacePiece(game.Players[currentID].CurrentMove.Col, game.Players[currentID].CurrentMove.Row);
 
-                                                history = WriteMoveRecords(history, game.Players[currentID].CurrentMove, game.Players[currentID], game.BoardGame);
+                                                history = WriteMoveRecords(history, game.Players[currentID].CurrentMove, game.Players[currentID], game.BoardGame.ID);
 
                                                 game.BoardGame.PrintBoard();
 
@@ -505,7 +504,6 @@ namespace BoardGames
                                             Console.WriteLine();
                                         } while (!(choice == 1 || choice == 2));
 
-                                        
                                     }
 
                                     else Console.WriteLine("Cannot undo!!!");
@@ -513,14 +511,17 @@ namespace BoardGames
                                     break;
 
                                 case 3:
-                                    Console.WriteLine("Save game");
+
+                                    SaveHistoryToFile(history);
                                     break;
 
                             }
 
-                        } while (!game.Players[currentID].State);
+                        } while (!game.Players[currentID].State && !(option == 3));
 
                     }
+
+                    if(option == 3) break;
 
                     else game.Players[currentID].ConfirmMove();
 
@@ -558,6 +559,8 @@ namespace BoardGames
                     currentID = currentplayer.ID - 1;
 
                 }
+
+                if(option == 3) break;
 
             }
 
@@ -603,7 +606,7 @@ namespace BoardGames
             return type.ToUpper();
         }
 
-        public static void SaveHistoryToFile(List<Move> history)
+        public static void SaveHistoryToFile(List<History> history)
         {
             File.WriteAllText(DATA_FILENAME, JsonSerializer.Serialize(history));
         }
@@ -616,7 +619,7 @@ namespace BoardGames
                 Console.WriteLine("ID #{0}:", temp.Player.ID);
                 Console.WriteLine("Name: {0}", temp.Player.Name);
                 Console.WriteLine("Move: {0}", temp.MoveList.Col);
-                Console.WriteLine("Game name: {0}", temp.BoardGame.Name);
+                Console.WriteLine("Game name: {0}", temp.BoardID);
             }
             
         }
