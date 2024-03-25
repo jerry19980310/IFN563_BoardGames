@@ -1,7 +1,4 @@
-﻿using System.Drawing;
-using System.Runtime.InteropServices;
-using System.Text.Json;
-using System.Xml.Linq;
+﻿using System.Text.Json;
 using static BoardGames.Program;
 
 namespace BoardGames
@@ -16,6 +13,7 @@ namespace BoardGames
         public Move CurrentMove { get; set; }
 
         public abstract void MakeMoveForTreblecross(int size);
+
 
         public void ConfirmMove()
         {
@@ -90,8 +88,6 @@ namespace BoardGames
 
             CurrentMove = new Move(position - 1, 0);
 
-
-
         }
     }
 
@@ -114,11 +110,7 @@ namespace BoardGames
 
             CurrentMove = new Move(position, 0);
 
-
         }
-
-
-
 
     }
 
@@ -151,8 +143,11 @@ namespace BoardGames
     public class History
     {
         public Move MoveList { get; set; }
-        public Player Player { get; set; }
+        public int PlayerId { get; set; }
+        public string PlayerName { get; set; }
+        public string PlayerType { get; set; }
         public int BoardID { get; set; }
+        public int BoardSize { get; set; }
 
     }
 
@@ -348,20 +343,44 @@ namespace BoardGames
 
         }
 
-        public static List<History> WriteMoveRecords(List<History> history, Move currentMove, Player player, int boardID)
+        public static List<History> WriteMoveRecords(List<History> history, Move currentMove, Player player, BoardGame boardGame)
         {
 
             History newRecord = new History();
 
             newRecord.MoveList = currentMove;
 
-            newRecord.Player = player;
+            newRecord.PlayerId = player.ID;
 
-            newRecord.BoardID = boardID;
+            newRecord.PlayerName = player.Name;
+
+            newRecord.PlayerType = player.Type;
+
+            newRecord.BoardID = boardGame.ID;
+
+            newRecord.BoardSize = boardGame.Board.GetLength(1);
 
             history.Add(newRecord);
 
             return history;
+
+        }
+
+        public static List<History> LoadHistoryFromFile()
+        {
+            if (!File.Exists(DATA_FILENAME))
+                return new List<History>();
+                
+            return JsonSerializer.Deserialize<List<History>>(File.ReadAllText(DATA_FILENAME));
+        }
+
+        public static void SetGameFromHistory()
+        {
+            List<History> history = LoadHistoryFromFile();
+            DisplayHistory(history);
+            const int PLAYERNUMBER = 2;
+            Game game = new Game();
+            game.Players = new Player[PLAYERNUMBER];
 
         }
 
@@ -425,7 +444,7 @@ namespace BoardGames
 
                     game.BoardGame.PlacePiece(game.Players[currentID].CurrentMove.Col, game.Players[currentID].CurrentMove.Row);
 
-                    history = WriteMoveRecords(history, game.Players[currentID].CurrentMove, game.Players[currentID], game.BoardGame.ID);
+                    history = WriteMoveRecords(history, game.Players[currentID].CurrentMove, game.Players[currentID], game.BoardGame);
 
                     game.BoardGame.PrintBoard();
 
@@ -480,7 +499,7 @@ namespace BoardGames
 
                                                 game.BoardGame.PlacePiece(game.Players[currentID].CurrentMove.Col, game.Players[currentID].CurrentMove.Row);
 
-                                                history = WriteMoveRecords(history, game.Players[currentID].CurrentMove, game.Players[currentID], game.BoardGame.ID);
+                                                history = WriteMoveRecords(history, game.Players[currentID].CurrentMove, game.Players[currentID], game.BoardGame);
 
                                                 game.BoardGame.PrintBoard();
 
@@ -611,13 +630,14 @@ namespace BoardGames
             File.WriteAllText(DATA_FILENAME, JsonSerializer.Serialize(history));
         }
 
+
         public static void DisplayHistory(List<History> history)
         {
 
             foreach(var temp in history)
             {
-                Console.WriteLine("ID #{0}:", temp.Player.ID);
-                Console.WriteLine("Name: {0}", temp.Player.Name);
+                Console.WriteLine("ID #{0}:", temp.PlayerId);
+                Console.WriteLine("Name: {0}", temp.PlayerName);
                 Console.WriteLine("Move: {0}", temp.MoveList.Col);
                 Console.WriteLine("Game name: {0}", temp.BoardID);
             }
@@ -631,9 +651,9 @@ namespace BoardGames
 
         public static void MainMenu()
         {
-            const int PLAYERNUMBER = 2;
-            Game game = new Game();
-            game.Players = new Player[PLAYERNUMBER];
+            // const int PLAYERNUMBER = 2;
+            // Game game = new Game();
+            // game.Players = new Player[PLAYERNUMBER];
 
             while (true)
             {
@@ -652,8 +672,7 @@ namespace BoardGames
                 }
 
 
-                //else if (choice == 2)
-                //    ReadPatientRecords();
+                else if (choice == 2) SetGameFromHistory();
                 //else if (choice == 3)
                 //    FindPatientRecords();
                 //else if (choice == 4)
