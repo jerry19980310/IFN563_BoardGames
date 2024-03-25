@@ -501,6 +501,11 @@ namespace BoardGames
 
                         history = WriteMoveRecords(history, game.Players[currentID].CurrentMove, game, currentID);
 
+                        if (game.Players[currentID].Type == "Computer")
+                        {
+                            Console.WriteLine("Computer's turn");
+                        }
+
                         game.BoardGame.PrintBoard();
 
                         //DisplayHistory(history);
@@ -597,6 +602,13 @@ namespace BoardGames
 
                             } while (!game.Players[currentID].State && !(option == 3));
 
+                        }
+
+                        else 
+                        {
+                            game.Players[currentID].ConfirmMove();
+                            game.Players[nextID].InitializeState();
+                            
                         }
 
                         if(option == 3) break;
@@ -697,6 +709,11 @@ namespace BoardGames
 
                     history = WriteMoveRecords(history, game.Players[currentID].CurrentMove, game, currentID);
 
+                    if (game.Players[currentID].Type == "Computer")
+                    {
+                        Console.WriteLine("Computer's turn");
+                    }
+
                     game.BoardGame.PrintBoard();
 
                     //DisplayHistory(history);
@@ -794,6 +811,13 @@ namespace BoardGames
 
                     }
 
+                    else 
+                    {
+                        game.Players[currentID].ConfirmMove();
+                        game.Players[nextID].InitializeState();
+                        
+                    }
+
                     if(option == 3) break;
 
                     winner = game.BoardGame.HasWinner();
@@ -808,6 +832,10 @@ namespace BoardGames
                     currentplayer = game.WhosTurn();
 
                     currentID = currentplayer.ID - 1;
+
+                    if(currentID == 0) nextID = 1;
+
+                    else nextID = 0;
 
                 }
 
