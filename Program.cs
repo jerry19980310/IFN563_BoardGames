@@ -92,7 +92,6 @@ namespace BoardGames
 
         }
     }
-
     public class ComputerPlayer : Player
     {
         public ComputerPlayer(int id, string name)
@@ -110,7 +109,6 @@ namespace BoardGames
             Name = name;
             Type = "Computer";
             State = state;
-
         }
 
         public override void MakeMoveForTreblecross(int size)
@@ -120,9 +118,7 @@ namespace BoardGames
             int position = rand.Next(size);
 
             CurrentMove = new Move(position, 0);
-
         }
-
     }
 
     public class Game
@@ -149,7 +145,7 @@ namespace BoardGames
             int gameID;
             do
             {
-                Console.WriteLine("Gane type:");
+                Console.WriteLine("Game type:");
                 Console.WriteLine("1: Treblecross");
                 Console.WriteLine("2: Reversl");
                 Console.Write("Enter a game code: ");
@@ -216,19 +212,20 @@ namespace BoardGames
             const int PLAYERNUMBER = 2;
             Players = new Player[PLAYERNUMBER];
 
+            //load history and place the piece by the recoard
             if (history.Count >= 1)
             {
+                //set board game by recoard
                 if (history[0].BoardID == 1)
                 {
                     BoardGame = new Treblecross(history[0].BoardSize);
-
                 }
                 else
                 {
                     Console.WriteLine("Not complete yet!!!");
                     return;
                 }
-
+                //set two players game by recoard
                 Players[0] = SetHumanPlayer(history[0].PlayerId, history[0].PlayerName, history[0].PlayerState);
 
                 if (history[0].opponentType == "Computer")
@@ -241,11 +238,13 @@ namespace BoardGames
                     Players[1] = SetHumanPlayer(2, history[0].opponentName, history[0].opponentState);
                 }
 
+                //Start place the piece
                 foreach (var his in history)
                 {
                     BoardGame.Board.PlacePiece(his.MoveList.Col, his.MoveList.Row, BoardGame.BoardPiece);
                 }
 
+                //set player's state to decise who is next player
                 if (history[history.Count - 1].PlayerId == 1)
                 {
                     Players[0].State = true;
@@ -273,25 +272,30 @@ namespace BoardGames
 
             int gameID = SelectGame();
 
+            //create Treblecross game
             if (gameID == 1)
             {
                 BoardGame = new Treblecross();
 
                 BoardGame.Initialize();
             }
+            //create Reversi game
             else
             {
                 Console.WriteLine("Not complete yet!!!");
                 return;
             }
 
+            //create player 1
             Players[0] = CreateHumanPlayer(1);
 
+            //create player by player 1 selectd
             string type = SelectPlayerType();
 
             if (type == "H") Players[1] = CreateHumanPlayer(2);
             else if (type == "C") Players[1] = CreateComputerPlayer(2);
 
+            //display current board
             BoardGame.Board.PrintBoard();
 
             //start playing game
@@ -348,8 +352,7 @@ namespace BoardGames
                         break;
                     }
 
-                    //DisplayHistory(history);
-
+                    //if player is human, show player menu
                     if (Players[currentID].Type == "Human")
                     {
                         do
@@ -360,11 +363,12 @@ namespace BoardGames
 
                             switch (option)
                             {
+                                //confirm
                                 case 1:
                                     Players[currentID].ConfirmMove();
                                     Players[nextID].InitializeState();
                                     break;
-
+                                //undo
                                 case 2:
                                     if (history.Count() > 0)
                                     {
@@ -388,6 +392,7 @@ namespace BoardGames
                                             Console.Write("Enter choice: ");
                                             choice = PromptForInt();
 
+                                            //place in different square
                                             if (choice == 1)
                                             {
                                                 do
@@ -407,6 +412,7 @@ namespace BoardGames
                                                 break;
                                             }
 
+                                            //redo
                                             else if (choice == 2)
                                             {
                                                 BoardGame.Board.PlacePiece(undo.MoveList.Col, undo.MoveList.Row, BoardGame.BoardPiece);
@@ -430,6 +436,7 @@ namespace BoardGames
 
                                     break;
 
+                                //save the recoard
                                 case 3:
 
                                     Players[currentID].ConfirmMove();
@@ -437,6 +444,7 @@ namespace BoardGames
                                     SaveHistoryToFile(history);
                                     break;
 
+                                //helping system 
                                 case 4:
                                     BoardGame.DisplayRule();
                                     break;
@@ -456,8 +464,10 @@ namespace BoardGames
 
                     if (option == 3) break;
 
+                    //check winner
                     winner = BoardGame.HasWinner();
 
+                    //if has winner, end the game
                     if (winner)
                     {
                         Console.WriteLine("Player #{0}: {1} wins !!!", Players[currentID].ID, Players[currentID].Name);
@@ -550,7 +560,6 @@ namespace BoardGames
 
         public void DisplayHistory(List<History> history)
         {
-
             foreach (var temp in history)
             {
                 Console.WriteLine("ID #{0}:", temp.PlayerId);
@@ -558,10 +567,7 @@ namespace BoardGames
                 Console.WriteLine("Move: {0}", temp.MoveList.Col);
                 Console.WriteLine("Game name: {0}", temp.BoardID);
             }
-
         }
-
-
     }
 
     public class History
@@ -569,19 +575,14 @@ namespace BoardGames
 
         public string opponentName { get; set; }
         public string opponentType { get; set; }
-
         public bool opponentState { get; set; }
-
         public int PlayerId { get; set; }
         public string PlayerName { get; set; }
         public string PlayerType { get; set; }
-
         public bool PlayerState { get; set; }
         public Move MoveList { get; set; }
-
         public int BoardID { get; set; }
         public int BoardSize { get; set; }
-
     }
 
     public class Board
@@ -654,7 +655,6 @@ namespace BoardGames
                     Console.WriteLine("+");
                 }
                 else Console.WriteLine("");
-
             }
 
         }
@@ -776,7 +776,6 @@ namespace BoardGames
         }
 
     }
-
     public class Move
     {
         public int Col { get; set; }
@@ -789,7 +788,6 @@ namespace BoardGames
         }
 
     }
-
 
     internal class Program
     {
@@ -804,9 +802,6 @@ namespace BoardGames
 
         public static void MainMenu()
         {
-            // const int PLAYERNUMBER = 2;
-            // Game game = new Game();
-            // game.Players = new Player[PLAYERNUMBER];
 
             while (true)
             {
@@ -818,22 +813,20 @@ namespace BoardGames
                 Console.Write("Enter choice: ");
                 int choice = PromptForInt();
 
+                //start new game
                 if (choice == 1)
                 {
                     Game game = new Game();
                     game.StartNewGame();
                 }
-
-
+                
+                //load history and continue the game
                 else if (choice == 2)
                 {
                     Game game = new Game();
                     game.SetGameFromHistory();
                 }
-                //else if (choice == 3)
-                //    FindPatientRecords();
-                //else if (choice == 4)
-                //    QueryOwingPatients();
+
                 else if (choice == 5)
                     return;
                 else
