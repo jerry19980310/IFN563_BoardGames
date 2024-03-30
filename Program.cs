@@ -745,13 +745,27 @@ namespace BoardGames
         public override void DisplayRule()
         {
             Console.WriteLine("Game Rules:");
-            Console.WriteLine("+++++++++++++++++++");
-            Console.WriteLine("| | | | | | | | | |");
-            Console.WriteLine("+++++++++++++++++++");
-
+            Console.WriteLine("The game begins with all the 1×n spaces empty.");
+            Console.WriteLine("Each player plays an X on the one-dimensional board in an empty cell."); 
+            Console.WriteLine("The game is won when a player makes a row of three Xs.");
+            Console.WriteLine("");
+            Console.WriteLine("A player create a 9 spaces board, the board shows below:");
             Console.WriteLine("+++++++++++++++++++");
             Console.WriteLine("|1|2|3|4|5|6|7|8|9|");
             Console.WriteLine("+++++++++++++++++++");
+            Console.WriteLine("You can enter 1 to 9 to place in the space");
+            Console.WriteLine("+++++++++++++++++++");
+            Console.WriteLine("| | | | | | | | | |");
+            Console.WriteLine("+++++++++++++++++++");
+            Console.WriteLine("For example, if you enter 3, then space 3 will be place the piece");
+            Console.WriteLine("+++++++++++++++++++");
+            Console.WriteLine("| | |X| | | | | | |");
+            Console.WriteLine("+++++++++++++++++++");
+            Console.WriteLine("if you makes a row of three Xs. You WINS !!!");
+            Console.WriteLine("+++++++++++++++++++");
+            Console.WriteLine("| | |X| | |X|X|X| |");
+            Console.WriteLine("+++++++++++++++++++");
+            Console.WriteLine("");
         }
     }
 
