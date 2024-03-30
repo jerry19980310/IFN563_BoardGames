@@ -409,6 +409,8 @@ namespace BoardGames
 
                                                 BoardGame.Board.PrintBoard();
 
+                                                winner = BoardGame.HasWinner();
+
                                                 break;
                                             }
 
@@ -430,10 +432,10 @@ namespace BoardGames
                                             Console.WriteLine();
                                         } while (!(choice == 1 || choice == 2));
 
+
                                     }
 
                                     else Console.WriteLine("Cannot undo!!!");
-
                                     break;
 
                                 //save the recoard
@@ -450,6 +452,8 @@ namespace BoardGames
                                     break;
 
                             }
+
+                            if (winner) break;
 
                         } while (!Players[currentID].State && !(option == 3));
 
@@ -807,8 +811,6 @@ namespace BoardGames
     {
         public const string DATA_FILENAME = "history.json";
 
-
-
         static void Main(string[] args)
         {
             MainMenu();
@@ -849,9 +851,6 @@ namespace BoardGames
                 Console.WriteLine();
             }
         }
-
-
-
         public static int PromptForInt()
         {
             bool isValid;
