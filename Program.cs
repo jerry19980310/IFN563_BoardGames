@@ -172,47 +172,64 @@ namespace BoardGames
 
     }
 
-    public abstract class BoardGame
+    public class Board
     {
-        public int ID { get; set; }
-        public string Name { get; set; }
-        public Piece BoardPiece;
-        //public int size { get; set; }
-        public string[,] Board { get; set; }
+        public int BoardID { get; set; }
+        public string BoardName { get; set; }
+        public string[,] BoardLayout { get; set; }
 
-        public abstract void Initialize();
+        public Board(int id, string name, int col, int row)
+        {
+            BoardID = id;
+            BoardName = name;
+            BoardLayout = new string[row, col];
 
-        public abstract bool HasWinner();
+        }
 
-        public abstract void DisplayRule();
+        public bool CheckSquare(int col, int row)
+        {
+            if (BoardLayout[row, col] is null)
+                return true;
+            else return false;
+        }
+
+        public void PlacePiece(int col, int row, Piece BoardPiece)
+        {
+            BoardLayout[row, col] = BoardPiece.Name;
+        }
+
+        public void RemovePiece(int col, int row)
+        {
+            BoardLayout[row, col] = null;
+        }
 
         public void PrintBoard()
         {
             string piece;
 
-            for (int i = 0; i < Board.GetLength(0) * 2 + 1; i++)
+            for (int i = 0; i < BoardLayout.GetLength(0) * 2 + 1; i++)
             {
 
-                for (int j = 0; j < Board.GetLength(1); j++)
+                for (int j = 0; j < BoardLayout.GetLength(1); j++)
                 {
-                    if ((i % 2) == 0 || i == (Board.GetLength(0) * 2 + 1))
+                    if ((i % 2) == 0 || i == (BoardLayout.GetLength(0) * 2 + 1))
                     {
                         Console.Write("++");
                     }
 
                     else
                     {
-                        if (Board[i / 2, j] is null)
+                        if (BoardLayout[i / 2, j] is null)
                         {
                             piece = " ";
 
                         }
 
-                        else piece = Board[i / 2, j];
+                        else piece = BoardLayout[i / 2, j];
 
                         Console.Write("|{0}", piece);
 
-                        if (j == (Board.GetLength(1) - 1))
+                        if (j == (BoardLayout.GetLength(1) - 1))
                         {
                             Console.Write("|");
                         }
@@ -220,7 +237,7 @@ namespace BoardGames
 
                 }
 
-                if ((i % 2) == 0 || i == (Board.GetLength(0) * 2 + 1))
+                if ((i % 2) == 0 || i == (BoardLayout.GetLength(0) * 2 + 1))
                 {
                     Console.WriteLine("+");
                 }
@@ -230,22 +247,23 @@ namespace BoardGames
 
         }
 
-        public bool CheckSquare(int col, int row)
-        {
-            if (Board[row, col] is null)
-                return true;
-            else return false;
-        }
+    }
 
-        public void PlacePiece(int col, int row)
-        {
-            Board[row, col] = BoardPiece.Name;
-        }
+    public abstract class BoardGame
+    {
+        public int ID { get; set; }
+        public string Name { get; set; }
+        public Piece BoardPiece;
+        //public int size { get; set; }
+        public Board Board { get; set; }
 
-        public void RemovePiece(int col, int row)
-        {
-            Board[row, col] = null;
-        }
+        public abstract void Initialize();
+
+        public abstract bool HasWinner();
+
+        public abstract void DisplayRule();
+
+        
 
     }
 
@@ -258,7 +276,9 @@ namespace BoardGames
             Name = "Treblecross";
             Piece piece1 = new Piece(1, "X");
             BoardPiece = piece1;
-            Board = new string[1, size];
+            Board board = new Board(1, "Treblecross", size, 1);
+            Board = board;
+
         }
         public override void Initialize()
         {
@@ -289,7 +309,8 @@ namespace BoardGames
             Name = "Treblecross";
             Piece piece1 = new Piece(1, "X");
             BoardPiece = piece1;
-            Board = new string[MAX_LENGTH, size];
+            Board board = new Board(1, "Treblecross", size, MAX_LENGTH);
+            Board = board;
 
         }
 
@@ -297,9 +318,9 @@ namespace BoardGames
         {
             bool hasWinner = false;
 
-            for (int i = 0; i < Board.GetLength(1) - 2; i++)
+            for (int i = 0; i < Board.BoardLayout.GetLength(1) - 2; i++)
             {
-                if (Board[0, i] == BoardPiece.Name && Board[0, i + 1] == BoardPiece.Name && Board[0, i + 2] == BoardPiece.Name)
+                if (Board.BoardLayout[0, i] == BoardPiece.Name && Board.BoardLayout[0, i + 1] == BoardPiece.Name && Board.BoardLayout[0, i + 2] == BoardPiece.Name)
                 {
                     hasWinner = true;
                     break;
@@ -362,7 +383,10 @@ namespace BoardGames
             int gameID;
             do
             {
-                Console.Write("Enter a game code => 1. Treblecross 2.Reversl: ");
+                Console.WriteLine("Gane type:");
+                Console.WriteLine("1: Treblecross");
+                Console.WriteLine("2: Reversl");
+                Console.Write("Enter a game code: ");
                 gameID = PromptForInt();
                 if (gameID == 1 || gameID == 2) isValid = true;
 
@@ -406,7 +430,7 @@ namespace BoardGames
 
             newRecord.BoardID = game.BoardGame.ID;
 
-            newRecord.BoardSize = game.BoardGame.Board.GetLength(1);
+            newRecord.BoardSize = game.BoardGame.Board.BoardLayout.GetLength(1);
 
             history.Add(newRecord);
 
@@ -459,7 +483,7 @@ namespace BoardGames
 
                 foreach (var his in history)
                 {
-                    game.BoardGame.PlacePiece(his.MoveList.Col, his.MoveList.Row);
+                    game.BoardGame.Board.PlacePiece(his.MoveList.Col, his.MoveList.Row, game.BoardGame.BoardPiece);
                 }
 
                 if (history[history.Count - 1].PlayerId == 1)
@@ -474,7 +498,7 @@ namespace BoardGames
                     game.Players[1].State = true;
                 }
 
-                game.BoardGame.PrintBoard();
+                game.BoardGame.Board.PrintBoard();
 
                 StartGame(game, history);
 
@@ -514,7 +538,7 @@ namespace BoardGames
             if (type == "H") game.Players[1] = CreateHumanPlayer(2);
             else if (type == "C") game.Players[1] = CreateComputerPlayer(2);
 
-            game.BoardGame.PrintBoard();
+            game.BoardGame.Board.PrintBoard();
 
             //start game
             StartGame(game, history);
@@ -545,13 +569,13 @@ namespace BoardGames
                 {
                     do
                     {
-                        game.Players[currentID].MakeMoveForTreblecross(game.BoardGame.Board.GetLength(1));
-                        isValid = game.BoardGame.CheckSquare(game.Players[currentID].CurrentMove.Col, game.Players[currentID].CurrentMove.Row);
+                        game.Players[currentID].MakeMoveForTreblecross(game.BoardGame.Board.BoardLayout.GetLength(1));
+                        isValid = game.BoardGame.Board.CheckSquare(game.Players[currentID].CurrentMove.Col, game.Players[currentID].CurrentMove.Row);
                         if (!isValid && game.Players[currentID].Type == "Human") Console.WriteLine("Cannot place here");
 
                     } while (!isValid);
 
-                    game.BoardGame.PlacePiece(game.Players[currentID].CurrentMove.Col, game.Players[currentID].CurrentMove.Row);
+                    game.BoardGame.Board.PlacePiece(game.Players[currentID].CurrentMove.Col, game.Players[currentID].CurrentMove.Row, game.BoardGame.BoardPiece);
 
                     history = WriteMoveRecords(history, game.Players[currentID].CurrentMove, game, currentID);
 
@@ -560,7 +584,7 @@ namespace BoardGames
                         Console.WriteLine("Computer's turn");
                     }
 
-                    game.BoardGame.PrintBoard();
+                    game.BoardGame.Board.PrintBoard();
 
                     winner = game.BoardGame.HasWinner();
 
@@ -595,9 +619,9 @@ namespace BoardGames
 
                                         history.RemoveAt(history.Count() - 1);
 
-                                        game.BoardGame.RemovePiece(game.Players[currentID].CurrentMove.Col, game.Players[currentID].CurrentMove.Row);
+                                        game.BoardGame.Board.RemovePiece(game.Players[currentID].CurrentMove.Col, game.Players[currentID].CurrentMove.Row);
 
-                                        game.BoardGame.PrintBoard();
+                                        game.BoardGame.Board.PrintBoard();
 
                                         int choice;
 
@@ -614,28 +638,28 @@ namespace BoardGames
                                             {
                                                 do
                                                 {
-                                                    game.Players[currentID].MakeMoveForTreblecross(game.BoardGame.Board.GetLength(1));
-                                                    isValid = game.BoardGame.CheckSquare(game.Players[currentID].CurrentMove.Col, game.Players[currentID].CurrentMove.Row);
+                                                    game.Players[currentID].MakeMoveForTreblecross(game.BoardGame.Board.BoardLayout.GetLength(1));
+                                                    isValid = game.BoardGame.Board.CheckSquare(game.Players[currentID].CurrentMove.Col, game.Players[currentID].CurrentMove.Row);
                                                     if (!isValid) Console.WriteLine("Cannot place here");
 
                                                 } while (!isValid);
 
-                                                game.BoardGame.PlacePiece(game.Players[currentID].CurrentMove.Col, game.Players[currentID].CurrentMove.Row);
+                                                game.BoardGame.Board.PlacePiece(game.Players[currentID].CurrentMove.Col, game.Players[currentID].CurrentMove.Row, game.BoardGame.BoardPiece);
 
                                                 history = WriteMoveRecords(history, game.Players[currentID].CurrentMove, game, currentID);
 
-                                                game.BoardGame.PrintBoard();
+                                                game.BoardGame.Board.PrintBoard();
 
                                                 break;
                                             }
 
                                             else if (choice == 2)
                                             {
-                                                game.BoardGame.PlacePiece(undo.MoveList.Col, undo.MoveList.Row);
+                                                game.BoardGame.Board.PlacePiece(undo.MoveList.Col, undo.MoveList.Row, game.BoardGame.BoardPiece);
 
                                                 history.Add(undo);
 
-                                                game.BoardGame.PrintBoard();
+                                                game.BoardGame.Board.PrintBoard();
 
                                                 break;
                                             }
@@ -704,7 +728,9 @@ namespace BoardGames
 
         public static HumanPlayer CreateHumanPlayer(int id)
         {
-            string name = PromptForString("Enter your name: ");
+
+            Console.Write("Enter your name Player #{0}: ", id);
+            string name = PromptForString("");
 
             return new HumanPlayer(id, name)
             {
