@@ -375,7 +375,7 @@ namespace BoardGames
             {
                 Console.Write("Enter your name Player #2: ");
                 name = PromptForString("");
-                Players[1] = humanFactory.CreatePlayer(1, name);
+                Players[1] = humanFactory.CreatePlayer(2, name);
             }
             else if (type == "C") Players[1] = computerFactory.CreatePlayer(2, "computer");
 
