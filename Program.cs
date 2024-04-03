@@ -3,7 +3,7 @@ using static BoardGames.Program;
 
 namespace BoardGames
 {
-    public abstract class Player
+    public interface IPlayer
     {
         public int ID { get; set; }
         public string Name { get; set; }
@@ -11,61 +11,27 @@ namespace BoardGames
         public bool State { get; set; }
         public Move CurrentMove { get; set; }
 
-        public abstract void MakeMoveForTreblecross(int size);
+        public void MakeMove(int size);
 
+        public void ConfirmMove();
 
-        public void ConfirmMove()
-        {
-            State = true;
-        }
+        public void InitializeState();
 
-        public void InitializeState()
-        {
-            State = false;
-        }
+        public void SetState(bool state);
 
-        public int PlayerMenu()
-        {
-
-            while (true)
-            {
-                Console.WriteLine("1. Confirm");
-                Console.WriteLine("2. Undo");
-                Console.WriteLine("3. Save game");
-                Console.WriteLine("4. Help");
-
-                Console.Write("Enter choice: ");
-                int choice = PromptForInt();
-
-                if (choice == 1) return 1;
-
-                else if (choice == 2) return 2;
-
-                else if (choice == 3) return 3;
-
-                else if (choice == 4) return 4;
-
-                else
-                    Console.WriteLine("Invalid choice, please enter a valid number.");
-
-                Console.WriteLine();
-            }
-        }
-
+        public int PlayerMenu();
     }
 
-    public class HumanPlayer : Player
+    public class Human : IPlayer
     {
-        public HumanPlayer(int id, string name)
-        {
-            ID = id;
-            Name = name;
-            Type = "Human";
-            State = false;
 
-        }
+        public int ID { get; set; }
+        public string Name { get; set; }
+        public string Type { get; set; }
+        public bool State { get; set; }
+        public Move CurrentMove { get; set; }
 
-        public override void MakeMoveForTreblecross(int size)
+        public void MakeMove(int size)
         {
 
             bool isValid;
@@ -91,10 +57,87 @@ namespace BoardGames
             CurrentMove = new Move(position - 1, 0);
 
         }
+
+        public void ConfirmMove()
+        {
+            State = true;
+        }
+
+        public void InitializeState()
+        {
+            State = false;
+        }
+
+        public void SetState(bool state)
+        {
+            State = state;
+        }
+
+        public Human(int id, string name)
+        {
+            ID = id;
+            Name = name;
+            Type = "Human";
+            State = false;
+        }
+
+        public int PlayerMenu()
+        {
+
+            while (true)
+            {
+                Console.WriteLine("1. Confirm");
+                Console.WriteLine("2. Undo");
+                Console.WriteLine("3. Save game");
+                Console.WriteLine("4. Help");
+
+                Console.Write("Enter choice: ");
+                int choice = PromptForInt();
+
+                if (choice >= 1 && choice <= 4) return choice;
+
+                else Console.WriteLine("Invalid choice, please enter a valid number.");
+
+                Console.WriteLine();
+            }
+        }
+
     }
-    public class ComputerPlayer : Player
+
+    public class Computer : IPlayer
     {
-        public ComputerPlayer(int id, string name)
+
+        public int ID { get; set; }
+        public string Name { get; set; }
+        public string Type { get; set; }
+        public bool State { get; set; }
+        public Move CurrentMove { get; set; }
+
+        public void MakeMove(int size)
+        {
+            Random rand = new Random();
+
+            int position = rand.Next(size);
+
+            CurrentMove = new Move(position, 0);
+        }
+
+        public void ConfirmMove()
+        {
+            State = true;
+        }
+
+        public void InitializeState()
+        {
+            State = false;
+        }
+
+        public void SetState(bool state)
+        {
+            State = state;
+        }
+
+        public Computer(int id, string name)
         {
             ID = id;
             Name = name;
@@ -103,30 +146,44 @@ namespace BoardGames
 
         }
 
-        public ComputerPlayer(int id, string name, bool state)
+        public int PlayerMenu()
         {
-            ID = id;
-            Name = name;
-            Type = "Computer";
-            State = state;
-        }
-
-        public override void MakeMoveForTreblecross(int size)
-        {
-            Random rand = new Random();
-
-            int position = rand.Next(size);
-
-            CurrentMove = new Move(position, 0);
+            return 0;
         }
     }
 
+    public abstract class PlayerFactory
+    {
+
+        public abstract IPlayer CreatePlayer(int id, string name);
+
+    }
+
+    public class HumanPlayerFactory: PlayerFactory
+    {
+        public override IPlayer CreatePlayer(int id, string name)
+        {
+            return new Human(id, name);
+        }
+
+    }
+
+    public class ComputerPlayerFactory : PlayerFactory
+    {
+        public override IPlayer CreatePlayer(int id, string name)
+        {
+            return new Computer(id, name);
+        }
+    }
+
+
     public class Game
     {
-        public Player[] Players;
+        public IPlayer[] Players;
+
         public BoardGame? BoardGame;
 
-        public Player WhosTurn()
+        public IPlayer WhosTurn()
         {
             foreach (var player in Players)
             {
@@ -209,8 +266,12 @@ namespace BoardGames
         {
             List<History> history = LoadHistoryFromFile();
 
+            PlayerFactory computerFactory = new ComputerPlayerFactory();
+
+            PlayerFactory humanFactory = new HumanPlayerFactory();
+
             const int PLAYERNUMBER = 2;
-            Players = new Player[PLAYERNUMBER];
+            Players = new IPlayer[PLAYERNUMBER];
 
             //load history and place the piece by the recoard
             if (history.Count >= 1)
@@ -225,17 +286,26 @@ namespace BoardGames
                     Console.WriteLine("Not complete yet!!!");
                     return;
                 }
-                //set two players game by recoard
-                Players[0] = SetHumanPlayer(history[0].PlayerId, history[0].PlayerName, history[0].PlayerState);
 
+                //create two players and load record by history file.
+
+                // create player 1 from history record.
+                Players[0] = humanFactory.CreatePlayer(history[0].PlayerId, history[0].PlayerName);
+                //set player state
+                Players[0].SetState(history[0].PlayerState);
+
+
+                // create player 2 from history record and set the state.
                 if (history[0].opponentType == "Computer")
                 {
-                    Players[1] = SetComputerPlayer(2, history[0].opponentState);
+                    Players[1] = computerFactory.CreatePlayer(2, history[0].opponentName);
+                    Players[1].SetState(history[0].opponentState);
                 }
 
                 else
                 {
-                    Players[1] = SetHumanPlayer(2, history[0].opponentName, history[0].opponentState);
+                    Players[1] = humanFactory.CreatePlayer(2, history[0].opponentName);
+                    Players[1].SetState(history[0].opponentState);
                 }
 
                 //Start place the piece
@@ -247,15 +317,16 @@ namespace BoardGames
                 //set player's state to decise who is next player
                 if (history[history.Count - 1].PlayerId == 1)
                 {
-                    Players[0].State = true;
-                    Players[1].State = false;
+                    Players[0].SetState(true);
+                    Players[1].SetState(false);
                 }
 
                 else
                 {
-                    Players[0].State = false;
-                    Players[1].State = true;
+                    Players[0].SetState(false);
+                    Players[1].SetState(true);
                 }
+
                 BoardGame.Board.PrintBoard();
 
                 //start playing game
@@ -266,8 +337,12 @@ namespace BoardGames
 
         public void StartNewGame()
         {
+            PlayerFactory computerFactory = new ComputerPlayerFactory();
+
+            PlayerFactory humanFactory = new HumanPlayerFactory();
+
             const int PLAYERNUMBER = 2;
-            Players = new Player[PLAYERNUMBER];
+            Players = new IPlayer[PLAYERNUMBER];
             List<History> history = new List<History>();
 
             int gameID = SelectGame();
@@ -287,13 +362,22 @@ namespace BoardGames
             }
 
             //create player 1
-            Players[0] = CreateHumanPlayer(1);
 
-            //create player by player 1 selectd
+            Console.Write("Enter your name Player #1: ");
+            string name = PromptForString("");
+            Players[0] = humanFactory.CreatePlayer(1, name);
+
+
+            //create player2 by player 1 selectd
             string type = SelectPlayerType();
 
-            if (type == "H") Players[1] = CreateHumanPlayer(2);
-            else if (type == "C") Players[1] = CreateComputerPlayer(2);
+            if (type == "H")
+            {
+                Console.Write("Enter your name Player #2: ");
+                name = PromptForString("");
+                Players[1] = humanFactory.CreatePlayer(1, name);
+            }
+            else if (type == "C") Players[1] = computerFactory.CreatePlayer(2, "computer");
 
             //display current board
             BoardGame.Board.PrintBoard();
@@ -313,7 +397,7 @@ namespace BoardGames
 
             while (!winner)
             {
-                Player currentplayer = WhosTurn();
+                IPlayer currentplayer = WhosTurn();
 
                 int currentID = currentplayer.ID - 1;
 
@@ -327,7 +411,7 @@ namespace BoardGames
                 {
                     do
                     {
-                        Players[currentID].MakeMoveForTreblecross(BoardGame.Board.BoardLayout.GetLength(1));
+                        Players[currentID].MakeMove(BoardGame.Board.BoardLayout.GetLength(1));
                         isValid = BoardGame.Board.CheckSquare(Players[currentID].CurrentMove.Col, Players[currentID].CurrentMove.Row);
                         if (!isValid && Players[currentID].Type == "Human") Console.WriteLine("Cannot place here");
 
@@ -397,7 +481,7 @@ namespace BoardGames
                                             {
                                                 do
                                                 {
-                                                    Players[currentID].MakeMoveForTreblecross(BoardGame.Board.BoardLayout.GetLength(1));
+                                                    Players[currentID].MakeMove(BoardGame.Board.BoardLayout.GetLength(1));
                                                     isValid = BoardGame.Board.CheckSquare(Players[currentID].CurrentMove.Col, Players[currentID].CurrentMove.Row);
                                                     if (!isValid) Console.WriteLine("Cannot place here");
 
@@ -436,6 +520,7 @@ namespace BoardGames
                                     }
 
                                     else Console.WriteLine("Cannot undo!!!");
+
                                     break;
 
                                 //save the recoard
@@ -494,48 +579,6 @@ namespace BoardGames
             }
         }
 
-        public HumanPlayer CreateHumanPlayer(int id)
-        {
-
-            Console.Write("Enter your name Player #{0}: ", id);
-            string name = PromptForString("");
-
-            return new HumanPlayer(id, name)
-            {
-                ID = id,
-                Name = name,
-            };
-
-        }
-
-        public HumanPlayer SetHumanPlayer(int id, string name, bool state)
-        {
-            return new HumanPlayer(id, name)
-            {
-                ID = id,
-                Name = name,
-                State = state,
-            };
-
-        }
-
-        public ComputerPlayer CreateComputerPlayer(int id)
-        {
-
-            ComputerPlayer player = new ComputerPlayer(id, "Computer");
-
-            return player;
-
-        }
-
-        public ComputerPlayer SetComputerPlayer(int id, bool state)
-        {
-
-            ComputerPlayer player = new ComputerPlayer(id, "Computer", state);
-
-            return player;
-
-        }
 
         public string SelectPlayerType()
         {
