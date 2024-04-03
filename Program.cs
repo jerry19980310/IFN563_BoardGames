@@ -176,9 +176,10 @@ namespace BoardGames
         }
     }
 
-
     public class Game
     {
+        public FileController fileController = FileController.Instance;
+
         public IPlayer[] Players;
 
         public BoardGame? BoardGame;
@@ -219,7 +220,7 @@ namespace BoardGames
             return gameID;
         }
 
-        public List<History> WriteMoveRecords(List<History> history, Move currentMove,  int playerID)
+        public List<History> WriteMoveToRecords(List<History> history, Move currentMove,  int playerID)
         {
             History newRecord = new History();
 
@@ -254,17 +255,9 @@ namespace BoardGames
             return history;
         }
 
-        public List<History> LoadHistoryFromFile()
-        {
-            if (!File.Exists(DATA_FILENAME))
-                return new List<History>();
-
-            return JsonSerializer.Deserialize<List<History>>(File.ReadAllText(DATA_FILENAME));
-        }
-
         public void SetGameFromHistory()
         {
-            List<History> history = LoadHistoryFromFile();
+            List<History> history = fileController.LoadHistoryFromFile();
 
             PlayerFactory computerFactory = new ComputerPlayerFactory();
 
@@ -287,7 +280,7 @@ namespace BoardGames
                     return;
                 }
 
-                //create two players and load record by history file.
+                // create two players and load record by history file.
 
                 // create player 1 from history record.
                 Players[0] = humanFactory.CreatePlayer(history[0].PlayerId, history[0].PlayerName);
@@ -367,7 +360,6 @@ namespace BoardGames
             string name = PromptForString("");
             Players[0] = humanFactory.CreatePlayer(1, name);
 
-
             //create player2 by player 1 selectd
             string type = SelectPlayerType();
 
@@ -419,7 +411,7 @@ namespace BoardGames
 
                     BoardGame.Board.PlacePiece(Players[currentID].CurrentMove.Col, Players[currentID].CurrentMove.Row, BoardGame.BoardPiece);
 
-                    history = WriteMoveRecords(history, Players[currentID].CurrentMove, currentID);
+                    history = WriteMoveToRecords(history, Players[currentID].CurrentMove, currentID);
 
                     if (Players[currentID].Type == "Computer")
                     {
@@ -489,7 +481,7 @@ namespace BoardGames
 
                                                 BoardGame.Board.PlacePiece(Players[currentID].CurrentMove.Col, Players[currentID].CurrentMove.Row, BoardGame.BoardPiece);
 
-                                                history = WriteMoveRecords(history, Players[currentID].CurrentMove, currentID);
+                                                history = WriteMoveToRecords(history, Players[currentID].CurrentMove, currentID);
 
                                                 BoardGame.Board.PrintBoard();
 
@@ -528,12 +520,13 @@ namespace BoardGames
 
                                     Players[currentID].ConfirmMove();
                                     Players[nextID].InitializeState();
-                                    SaveHistoryToFile(history);
+                                    fileController.SaveHistoryToFile(history);
                                     break;
 
                                 //helping system 
                                 case 4:
                                     BoardGame.DisplayRule();
+                                    BoardGame.Board.PrintBoard();
                                     break;
 
                             }
@@ -599,12 +592,6 @@ namespace BoardGames
             return type.ToUpper();
         }
 
-        public void SaveHistoryToFile(List<History> history)
-        {
-            File.WriteAllText(DATA_FILENAME, JsonSerializer.Serialize(history));
-        }
-
-
         public void DisplayHistory(List<History> history)
         {
             foreach (var temp in history)
@@ -667,6 +654,8 @@ namespace BoardGames
         {
             string piece;
 
+            Console.WriteLine("***** Current Game *****");
+
             for (int i = 0; i < BoardLayout.GetLength(0) * 2 + 1; i++)
             {
 
@@ -703,6 +692,8 @@ namespace BoardGames
                 }
                 else Console.WriteLine("");
             }
+
+            Console.WriteLine("");
 
         }
 
@@ -816,13 +807,29 @@ namespace BoardGames
         }
     }
 
-    //public class Reversi : BoardGame
-    //{
-    //    public override void Initialize()
-    //    {
+    public class Reversi : BoardGame
+    {
+       public override void Initialize()
+       {
 
+       }
+
+       public override void DisplayRule()
+       {
+            Console.WriteLine("Game Rules:");
+       }
+
+       public override bool HasWinner()
+       {
+            return false;
+       }
+
+    //    public Piece GetPiece()
+    //    {
+            
     //    }
-    //}
+
+    }
 
     public class Piece
     {
@@ -833,7 +840,6 @@ namespace BoardGames
         {
             ID = id;
             Name = name;
-
         }
 
     }
@@ -847,7 +853,45 @@ namespace BoardGames
             Col = col;
             Row = row;
         }
+    }
 
+    public class FileController
+    {
+        private static FileController instance;
+        private static readonly object lockObject = new object();
+
+        private FileController() { }
+
+        public static FileController Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    lock (lockObject)
+                    {
+                        if (instance == null)
+                        {
+                            instance = new FileController();
+                        }
+                    }
+                }
+                return instance;
+            }
+        }
+
+        public List<History> LoadHistoryFromFile()
+        {
+            if (!File.Exists(DATA_FILENAME))
+                return new List<History>();
+
+            return JsonSerializer.Deserialize<List<History>>(File.ReadAllText(DATA_FILENAME));
+        }
+
+        public void SaveHistoryToFile(List<History> history)
+        {
+            File.WriteAllText(DATA_FILENAME, JsonSerializer.Serialize(history));
+        }
     }
 
     internal class Program
@@ -861,7 +905,6 @@ namespace BoardGames
 
         public static void MainMenu()
         {
-
             while (true)
             {
                 Console.WriteLine("1. Start a new board game");
@@ -912,7 +955,6 @@ namespace BoardGames
             while (!isValid); // keep looping until a valid number is entered
             return value;
         }
-
         public static string PromptForString(string prompt)
         {
             string value;
@@ -928,7 +970,6 @@ namespace BoardGames
             while (!isValid); // keep trying until we get a non-empty string
             return value;
         }
-
         public static double PromptForDouble(string prompt)
         {
             bool isValid;
@@ -973,7 +1014,4 @@ namespace BoardGames
             return value;
         }
     }
-
 }
-
-
