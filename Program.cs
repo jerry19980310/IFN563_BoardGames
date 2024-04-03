@@ -280,7 +280,7 @@ namespace BoardGames
 
         //     return JsonSerializer.Deserialize<List<History>>(File.ReadAllText(DATA_FILENAME));
         // }
-        public List<History> LoadHistoryFromFile()
+          public List<History> LoadHistoryFromFile()
         {
             string fileName = Singleton.GetInstance().DataFileName;
             if (!File.Exists(fileName))
@@ -700,37 +700,43 @@ namespace BoardGames
         {
             string piece;
 
-            // Print the column numbers as a header for the board in the format +1+2+3+...
-            for (int k = 0; k < BoardLayout.GetLength(1); k++)
+            for (int i = 0; i < BoardLayout.GetLength(0) * 2 + 1; i++)
             {
-                Console.Write("+{0}", k + 1); // Adding the plus sign before each number
-            }
-            Console.WriteLine("+"); // Close the header row with a plus sign
 
-            for (int i = 0; i < BoardLayout.GetLength(0); i++)
-            {
                 for (int j = 0; j < BoardLayout.GetLength(1); j++)
                 {
-                    if (BoardLayout[i, j] is null)
+                    if ((i % 2) == 0 || i == (BoardLayout.GetLength(0) * 2 + 1))
                     {
-                        piece = " ";
+                        Console.Write("++");
                     }
+
                     else
                     {
-                        piece = BoardLayout[i, j];
-                    }
-                    Console.Write("|{0}", piece); // Adjusted to print the board pieces between | |
-                }
-                Console.WriteLine("|"); // Close each row with a bar
+                        if (BoardLayout[i / 2, j] is null)
+                        {
+                            piece = " ";
 
-                // Print a row of pluses and minuses to separate each row of the board
-                for (int j = 0; j < BoardLayout.GetLength(1); j++)
-                {
-                    if (j == 0) Console.Write("+"); // Print leading plus for the row separator
-                    Console.Write("--");
+                        }
+
+                        else piece = BoardLayout[i / 2, j];
+
+                        Console.Write("|{0}", piece);
+
+                        if (j == (BoardLayout.GetLength(1) - 1))
+                        {
+                            Console.Write("|");
+                        }
+                    }
+
                 }
-                Console.WriteLine("+"); // Close the row separator with a plus
+
+                if ((i % 2) == 0 || i == (BoardLayout.GetLength(0) * 2 + 1))
+                {
+                    Console.WriteLine("+");
+                }
+                else Console.WriteLine("");
             }
+
         }
 
     }
