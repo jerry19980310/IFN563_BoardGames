@@ -283,7 +283,7 @@ namespace BoardGames
                 }
                 else
                 {
-                    Console.WriteLine("Not complete yet!!!");
+                    Console.WriteLine("We're working on it!!!");
                     return;
                 }
 
@@ -866,8 +866,7 @@ namespace BoardGames
             {
                 Console.WriteLine("1. Start a new board game");
                 Console.WriteLine("2. Load file to continue the board game");
-
-                Console.WriteLine("5. Exit");
+                Console.WriteLine("3. Exit");
 
                 Console.Write("Enter choice: ");
                 int choice = PromptForInt();
