@@ -7,8 +7,8 @@ namespace BoardGames
     {
         public int ID { get; set; }
         public string Name { get; set; }
-        public string Type { get; set; }
-        public bool State { get; set; }
+        public string Type { get; set; } //Differentiates between human and computer players.
+        public bool State { get; set; }// player has confirmed their move.
         public Move CurrentMove { get; set; }
 
         public abstract void MakeMoveForTreblecross(int size);
@@ -35,19 +35,23 @@ namespace BoardGames
                 Console.WriteLine("4. Help");
 
                 Console.Write("Enter choice: ");
+                // Utility method to read and validate an integer input.
                 int choice = PromptForInt();
 
-                if (choice == 1) return 1;
+                // if (choice == 1) return 1;
 
-                else if (choice == 2) return 2;
+                // else if (choice == 2) return 2;
 
-                else if (choice == 3) return 3;
+                // else if (choice == 3) return 3;
 
-                else if (choice == 4) return 4;
+                // else if (choice == 4) return 4;
 
-                else
-                    Console.WriteLine("Invalid choice, please enter a valid number.");
+                // else
+                //     Console.WriteLine("Invalid choice, please enter a valid number.");
 
+                // Console.WriteLine();
+                if (choice >= 1 && choice <= 4) return choice;
+                else Console.WriteLine("Invalid choice, please enter a valid number.");
                 Console.WriteLine();
             }
         }
@@ -93,15 +97,16 @@ namespace BoardGames
         }
     }
     public class ComputerPlayer : Player
-    {
-        public ComputerPlayer(int id, string name)
-        {
-            ID = id;
-            Name = name;
-            Type = "Computer";
-            State = false;
+    {   
+        public ComputerPlayer(int id, string name) : this(id, name, false) { }
+        // public ComputerPlayer(int id, string name)
+        // {
+        //     ID = id;
+        //     Name = name;
+        //     Type = "Computer";
+        //     State = false;
 
-        }
+        // }
 
         public ComputerPlayer(int id, string name, bool state)
         {
@@ -124,6 +129,49 @@ namespace BoardGames
     public class Game
     {
         public Player[] Players;
+
+        // factory method
+        public Player CreatePlayer(string type, int id)
+        {
+            if (type == "H")
+            {
+                Console.Write("Enter your name Player #{0}: ", id);
+                string name = PromptForString("");
+                return new HumanPlayer(id, name);
+            }
+            else if (type == "C")
+            {
+                return new ComputerPlayer(id, "Computer");
+            }
+            else
+            {
+                throw new ArgumentException("Invalid player type.");
+            }
+        }
+
+        public Player CreateHumanPlayer(int id)
+        {
+            Console.Write("Enter your name Player #{0}: ", id);
+            string name = PromptForString("");
+            return new HumanPlayer(id, name);
+        }
+
+        public Player CreateComputerPlayer(int id)
+        {
+            return new ComputerPlayer(id, "Computer");
+        }
+
+        public void InitializePlayers()
+        {
+            string playerType1 = SelectPlayerType(); // Assuming this method prompts the user and returns "H" or "C"
+            Player player1 = CreatePlayer(playerType1, 1);
+            
+            string playerType2 = SelectPlayerType(); // Could be same as playerType1 or different, based on game logic
+            Player player2 = CreatePlayer(playerType2, 2);
+
+        
+        }
+
         public BoardGame? BoardGame;
 
         public Player WhosTurn()
@@ -494,19 +542,19 @@ namespace BoardGames
             }
         }
 
-        public HumanPlayer CreateHumanPlayer(int id)
-        {
+        // public HumanPlayer CreateHumanPlayer(int id)
+        // {
 
-            Console.Write("Enter your name Player #{0}: ", id);
-            string name = PromptForString("");
+        //     Console.Write("Enter your name Player #{0}: ", id);
+        //     string name = PromptForString("");
 
-            return new HumanPlayer(id, name)
-            {
-                ID = id,
-                Name = name,
-            };
+        //     return new HumanPlayer(id, name)
+        //     {
+        //         ID = id,
+        //         Name = name,
+        //     };
 
-        }
+        // }
 
         public HumanPlayer SetHumanPlayer(int id, string name, bool state)
         {
@@ -519,14 +567,14 @@ namespace BoardGames
 
         }
 
-        public ComputerPlayer CreateComputerPlayer(int id)
-        {
+        // public ComputerPlayer CreateComputerPlayer(int id)
+        // {
 
-            ComputerPlayer player = new ComputerPlayer(id, "Computer");
+        //     ComputerPlayer player = new ComputerPlayer(id, "Computer");
 
-            return player;
+        //     return player;
 
-        }
+        // }
 
         public ComputerPlayer SetComputerPlayer(int id, bool state)
         {
@@ -605,9 +653,7 @@ namespace BoardGames
 
         public bool CheckSquare(int col, int row)
         {
-            if (BoardLayout[row, col] is null)
-                return true;
-            else return false;
+            return BoardLayout[row, col] == null;
         }
 
         public void PlacePiece(int col, int row, Piece BoardPiece)
