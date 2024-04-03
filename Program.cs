@@ -3,6 +3,24 @@ using static BoardGames.Program;
 
 namespace BoardGames
 {
+    // Singleton class to manage history filename
+    public class Singleton
+    {
+        private static Singleton uniqueInstance = null;
+        // Replace the original DATA_FILENAME constant with a property in Singleton
+        public string DataFileName { get; private set; } = "history.json";
+
+        private Singleton() {}
+
+        public static Singleton GetInstance()
+        {
+            if (uniqueInstance == null)
+            {
+                uniqueInstance = new Singleton();
+            }
+            return uniqueInstance;
+        }
+    }
     public interface IPlayer
     {
         public int ID { get; set; }
@@ -254,12 +272,21 @@ namespace BoardGames
             return history;
         }
 
+        
+        // public List<History> LoadHistoryFromFile()
+        // {
+        //     if (!File.Exists(DATA_FILENAME))
+        //         return new List<History>();
+
+        //     return JsonSerializer.Deserialize<List<History>>(File.ReadAllText(DATA_FILENAME));
+        // }
         public List<History> LoadHistoryFromFile()
         {
-            if (!File.Exists(DATA_FILENAME))
+            string fileName = Singleton.GetInstance().DataFileName;
+            if (!File.Exists(fileName))
                 return new List<History>();
 
-            return JsonSerializer.Deserialize<List<History>>(File.ReadAllText(DATA_FILENAME));
+            return JsonSerializer.Deserialize<List<History>>(File.ReadAllText(fileName));
         }
 
         public void SetGameFromHistory()
@@ -599,9 +626,15 @@ namespace BoardGames
             return type.ToUpper();
         }
 
+        // public void SaveHistoryToFile(List<History> history)
+        // {
+        //     File.WriteAllText(DATA_FILENAME, JsonSerializer.Serialize(history));
+        // }
+
         public void SaveHistoryToFile(List<History> history)
         {
-            File.WriteAllText(DATA_FILENAME, JsonSerializer.Serialize(history));
+            string fileName = Singleton.GetInstance().DataFileName;
+            File.WriteAllText(fileName, JsonSerializer.Serialize(history));
         }
 
 
@@ -667,43 +700,37 @@ namespace BoardGames
         {
             string piece;
 
-            for (int i = 0; i < BoardLayout.GetLength(0) * 2 + 1; i++)
+            // Print the column numbers as a header for the board in the format +1+2+3+...
+            for (int k = 0; k < BoardLayout.GetLength(1); k++)
             {
+                Console.Write("+{0}", k + 1); // Adding the plus sign before each number
+            }
+            Console.WriteLine("+"); // Close the header row with a plus sign
 
+            for (int i = 0; i < BoardLayout.GetLength(0); i++)
+            {
                 for (int j = 0; j < BoardLayout.GetLength(1); j++)
                 {
-                    if ((i % 2) == 0 || i == (BoardLayout.GetLength(0) * 2 + 1))
+                    if (BoardLayout[i, j] is null)
                     {
-                        Console.Write("++");
+                        piece = " ";
                     }
-
                     else
                     {
-                        if (BoardLayout[i / 2, j] is null)
-                        {
-                            piece = " ";
-
-                        }
-
-                        else piece = BoardLayout[i / 2, j];
-
-                        Console.Write("|{0}", piece);
-
-                        if (j == (BoardLayout.GetLength(1) - 1))
-                        {
-                            Console.Write("|");
-                        }
+                        piece = BoardLayout[i, j];
                     }
-
+                    Console.Write("|{0}", piece); // Adjusted to print the board pieces between | |
                 }
+                Console.WriteLine("|"); // Close each row with a bar
 
-                if ((i % 2) == 0 || i == (BoardLayout.GetLength(0) * 2 + 1))
+                // Print a row of pluses and minuses to separate each row of the board
+                for (int j = 0; j < BoardLayout.GetLength(1); j++)
                 {
-                    Console.WriteLine("+");
+                    if (j == 0) Console.Write("+"); // Print leading plus for the row separator
+                    Console.Write("--");
                 }
-                else Console.WriteLine("");
+                Console.WriteLine("+"); // Close the row separator with a plus
             }
-
         }
 
     }
@@ -852,7 +879,7 @@ namespace BoardGames
 
     internal class Program
     {
-        public const string DATA_FILENAME = "history.json";
+        // public const string DATA_FILENAME = "history.json";
 
         static void Main(string[] args)
         {
@@ -861,12 +888,13 @@ namespace BoardGames
 
         public static void MainMenu()
         {
+            string historyFilename = Singleton.GetInstance().DataFileName;
 
             while (true)
             {
                 Console.WriteLine("1. Start a new board game");
                 Console.WriteLine("2. Load file to continue the board game");
-                Console.WriteLine("3. Exit");
+                Console.WriteLine("5. Exit");
 
                 Console.Write("Enter choice: ");
                 int choice = PromptForInt();
