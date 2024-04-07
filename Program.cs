@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Xml.Linq;
 using static BoardGames.Program;
 
 namespace BoardGames
@@ -157,6 +158,8 @@ namespace BoardGames
 
         public abstract IPlayer CreatePlayer(int id, string name);
 
+        public abstract IPlayer Setstate(IPlayer player, bool state);
+
     }
 
     public class HumanPlayerFactory: PlayerFactory
@@ -166,6 +169,14 @@ namespace BoardGames
             return new Human(id, name);
         }
 
+        public override IPlayer Setstate(IPlayer player, bool state)
+        {
+            player.SetState(state);
+
+            return player;
+        }
+
+
     }
 
     public class ComputerPlayerFactory : PlayerFactory
@@ -173,6 +184,13 @@ namespace BoardGames
         public override IPlayer CreatePlayer(int id, string name)
         {
             return new Computer(id, name);
+        }
+
+        public override IPlayer Setstate(IPlayer player, bool state)
+        {
+            player.SetState(state);
+
+            return player;
         }
     }
 
@@ -285,20 +303,20 @@ namespace BoardGames
                 // create player 1 from history record.
                 Players[0] = humanFactory.CreatePlayer(history[0].PlayerId, history[0].PlayerName);
                 //set player state
-                Players[0].SetState(history[0].PlayerState);
+                Players[0] = humanFactory.Setstate(Players[0],history[0].PlayerState);
 
 
                 // create player 2 from history record and set the state.
                 if (history[0].opponentType == "Computer")
                 {
                     Players[1] = computerFactory.CreatePlayer(2, history[0].opponentName);
-                    Players[1].SetState(history[0].opponentState);
+                    Players[1] = computerFactory.Setstate(Players[1], history[0].opponentState);
                 }
 
                 else
                 {
                     Players[1] = humanFactory.CreatePlayer(2, history[0].opponentName);
-                    Players[1].SetState(history[0].opponentState);
+                    Players[1] = humanFactory.Setstate(Players[1], history[0].opponentState);
                 }
 
                 //Start place the piece
@@ -310,14 +328,28 @@ namespace BoardGames
                 //set player's state to decise who is next player
                 if (history[history.Count - 1].PlayerId == 1)
                 {
-                    Players[0].SetState(true);
-                    Players[1].SetState(false);
+                    Players[0] = humanFactory.Setstate(Players[0], true);
+
+                    if(history[0].opponentType == "Computer")
+                    {
+                        Players[1] = computerFactory.Setstate(Players[1], false);
+                    }
+
+                    else Players[1] = humanFactory.Setstate(Players[1], false);
+
                 }
 
                 else
                 {
-                    Players[0].SetState(false);
-                    Players[1].SetState(true);
+                    Players[0] = humanFactory.Setstate(Players[0], false);
+
+                    if (history[0].opponentType == "Computer")
+                    {
+                        Players[1] = computerFactory.Setstate(Players[1], true);
+                    }
+
+                    else Players[1] = humanFactory.Setstate(Players[1], true);
+
                 }
 
                 BoardGame.Board.PrintBoard();
@@ -824,7 +856,7 @@ namespace BoardGames
             return false;
        }
 
-    //    public Piece GetPiece()
+    //    public Piece GetCurrentPiece()
     //    {
             
     //    }
