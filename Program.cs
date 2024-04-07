@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Reflection;
+using System.Text.Json;
 using System.Xml.Linq;
 using static BoardGames.Program;
 
@@ -199,6 +200,8 @@ namespace BoardGames
         public FileController fileController = FileController.Instance;
 
         public IPlayer[] Players;
+
+        public IPlayer CurrentPlayer;
 
         public BoardGame? BoardGame;
 
@@ -411,6 +414,30 @@ namespace BoardGames
 
         }
 
+        public void PlayerMove(int currentID)
+        {
+            bool isValid;
+
+            do
+            {
+                Players[currentID].MakeMove(BoardGame.Board.BoardLayout.GetLength(1));
+                isValid = BoardGame.Board.CheckSquare(Players[currentID].CurrentMove.Col, Players[currentID].CurrentMove.Row);
+                if (!isValid && Players[currentID].Type == "Human") Console.WriteLine("Cannot place here");
+
+            } while (!isValid);
+
+            BoardGame.Board.PlacePiece(Players[currentID].CurrentMove.Col, Players[currentID].CurrentMove.Row, BoardGame.BoardPiece);
+
+            if (Players[currentID].Type == "Computer")
+            {
+                Console.WriteLine("Computer's turn");
+            }
+
+            BoardGame.Board.PrintBoard();
+
+
+        }
+
         public void PlayGame(List<History> history)
         {
             bool isValid;
@@ -421,9 +448,9 @@ namespace BoardGames
 
             while (!winner)
             {
-                IPlayer currentplayer = WhosTurn();
+                CurrentPlayer = WhosTurn();
 
-                int currentID = currentplayer.ID - 1;
+                int currentID = CurrentPlayer.ID - 1;
 
                 int nextID;
 
@@ -433,24 +460,10 @@ namespace BoardGames
 
                 while (!Players[currentID].State)
                 {
-                    do
-                    {
-                        Players[currentID].MakeMove(BoardGame.Board.BoardLayout.GetLength(1));
-                        isValid = BoardGame.Board.CheckSquare(Players[currentID].CurrentMove.Col, Players[currentID].CurrentMove.Row);
-                        if (!isValid && Players[currentID].Type == "Human") Console.WriteLine("Cannot place here");
 
-                    } while (!isValid);
-
-                    BoardGame.Board.PlacePiece(Players[currentID].CurrentMove.Col, Players[currentID].CurrentMove.Row, BoardGame.BoardPiece);
+                    PlayerMove(currentID);
 
                     history = WriteMoveToRecords(history, Players[currentID].CurrentMove, currentID);
-
-                    if (Players[currentID].Type == "Computer")
-                    {
-                        Console.WriteLine("Computer's turn");
-                    }
-
-                    BoardGame.Board.PrintBoard();
 
                     winner = BoardGame.HasWinner();
 
@@ -469,99 +482,9 @@ namespace BoardGames
 
                             History undo = new History();
 
-                            switch (option)
-                            {
-                                //confirm
-                                case 1:
-                                    Players[currentID].ConfirmMove();
-                                    Players[nextID].InitializeState();
-                                    break;
-                                //undo
-                                case 2:
-                                    if (history.Count() > 0)
-                                    {
+                            HumanOperation(option, currentID, nextID, history);
 
-                                        undo = history[history.Count() - 1];
-
-                                        history.RemoveAt(history.Count() - 1);
-
-                                        BoardGame.Board.RemovePiece(Players[currentID].CurrentMove.Col, Players[currentID].CurrentMove.Row);
-
-                                        BoardGame.Board.PrintBoard();
-
-                                        int choice;
-
-                                        do
-                                        {
-                                            Console.WriteLine("1. Place in new square");
-                                            Console.WriteLine("2. Redo");
-
-
-                                            Console.Write("Enter choice: ");
-                                            choice = PromptForInt();
-
-                                            //place in different square
-                                            if (choice == 1)
-                                            {
-                                                do
-                                                {
-                                                    Players[currentID].MakeMove(BoardGame.Board.BoardLayout.GetLength(1));
-                                                    isValid = BoardGame.Board.CheckSquare(Players[currentID].CurrentMove.Col, Players[currentID].CurrentMove.Row);
-                                                    if (!isValid) Console.WriteLine("Cannot place here");
-
-                                                } while (!isValid);
-
-                                                BoardGame.Board.PlacePiece(Players[currentID].CurrentMove.Col, Players[currentID].CurrentMove.Row, BoardGame.BoardPiece);
-
-                                                history = WriteMoveToRecords(history, Players[currentID].CurrentMove, currentID);
-
-                                                BoardGame.Board.PrintBoard();
-
-                                                winner = BoardGame.HasWinner();
-
-                                                break;
-                                            }
-
-                                            //redo
-                                            else if (choice == 2)
-                                            {
-                                                BoardGame.Board.PlacePiece(undo.MoveList.Col, undo.MoveList.Row, BoardGame.BoardPiece);
-
-                                                history.Add(undo);
-
-                                                BoardGame.Board.PrintBoard();
-
-                                                break;
-                                            }
-
-                                            else
-                                                Console.WriteLine("Invalid choice, please enter a valid number.");
-
-                                            Console.WriteLine();
-                                        } while (!(choice == 1 || choice == 2));
-
-
-                                    }
-
-                                    else Console.WriteLine("Cannot undo!!!");
-
-                                    break;
-
-                                //save the recoard
-                                case 3:
-
-                                    Players[currentID].ConfirmMove();
-                                    Players[nextID].InitializeState();
-                                    fileController.SaveHistoryToFile(history);
-                                    break;
-
-                                //helping system 
-                                case 4:
-                                    BoardGame.DisplayRule();
-                                    BoardGame.Board.PrintBoard();
-                                    break;
-
-                            }
+                            winner = BoardGame.HasWinner();
 
                             if (winner) break;
 
@@ -589,9 +512,9 @@ namespace BoardGames
                     }
 
 
-                    currentplayer = WhosTurn();
+                    CurrentPlayer = WhosTurn();
 
-                    currentID = currentplayer.ID - 1;
+                    currentID = CurrentPlayer.ID - 1;
 
                     if (currentID == 0) nextID = 1;
 
@@ -600,6 +523,93 @@ namespace BoardGames
                 }
 
                 if (option == 3) break;
+
+            }
+        }
+
+        public void HumanOperation(int option, int currentID, int nextID, List<History> history)
+        {
+            History undo = new History();
+
+            switch (option)
+            {
+                //confirm
+                case 1:
+                    Players[currentID].ConfirmMove();
+                    Players[nextID].InitializeState();
+                    break;
+                //undo
+                case 2:
+                    if (history.Count() > 0)
+                    {
+
+                        undo = history[history.Count() - 1];
+
+                        history.RemoveAt(history.Count() - 1);
+
+                        BoardGame.Board.RemovePiece(Players[currentID].CurrentMove.Col, Players[currentID].CurrentMove.Row);
+
+                        BoardGame.Board.PrintBoard();
+
+                        int choice;
+
+                        do
+                        {
+                            Console.WriteLine("1. Place in new square");
+                            Console.WriteLine("2. Redo");
+
+
+                            Console.Write("Enter choice: ");
+                            choice = PromptForInt();
+
+                            //place in different square
+                            if (choice == 1)
+                            {
+                                PlayerMove(currentID);
+
+                                history = WriteMoveToRecords(history, Players[currentID].CurrentMove, currentID);
+
+                                break;
+                            }
+
+                            //redo
+                            else if (choice == 2)
+                            {
+                                BoardGame.Board.PlacePiece(undo.MoveList.Col, undo.MoveList.Row, BoardGame.BoardPiece);
+
+                                history.Add(undo);
+
+                                BoardGame.Board.PrintBoard();
+
+                                break;
+                            }
+
+                            else
+                                Console.WriteLine("Invalid choice, please enter a valid number.");
+
+                            Console.WriteLine();
+                        } while (!(choice == 1 || choice == 2));
+
+
+                    }
+
+                    else Console.WriteLine("Cannot undo!!!");
+
+                    break;
+
+                //save the recoard
+                case 3:
+
+                    Players[currentID].ConfirmMove();
+                    Players[nextID].InitializeState();
+                    fileController.SaveHistoryToFile(history);
+                    break;
+
+                //helping system 
+                case 4:
+                    BoardGame.DisplayRule();
+                    BoardGame.Board.PrintBoard();
+                    break;
 
             }
         }
