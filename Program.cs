@@ -163,6 +163,8 @@ namespace BoardGames
 
         public BoardGame? BoardGame;
 
+        public List<History> GameHistory;
+
         public Player WhosTurn()
         {
             foreach (var player in Players)
@@ -199,7 +201,7 @@ namespace BoardGames
             return gameID;
         }
 
-        public List<History> WriteMoveToRecords(List<History> history, Move currentMove,  int playerID)
+        public void WriteMoveToRecords(Move currentMove,  int playerID)
         {
             History newRecord = new History();
 
@@ -229,14 +231,13 @@ namespace BoardGames
 
             newRecord.BoardSize = BoardGame.Board.BoardLayout.GetLength(1);
 
-            history.Add(newRecord);
-
-            return history;
+            GameHistory.Add(newRecord);
+            
         }
 
         public void SetGameFromHistory()
         {
-            List<History> history = fileController.LoadHistoryFromFile();
+            GameHistory = fileController.LoadHistoryFromFile();
 
             PlayerFactory computerFactory = new ComputerPlayerFactory();
 
@@ -246,12 +247,12 @@ namespace BoardGames
             Players = new Player[PLAYERNUMBER];
 
             //load history and place the piece by the recoard
-            if (history.Count >= 1)
+            if (GameHistory.Count >= 1)
             {
                 //set board game by recoard
-                if (history[0].BoardID == 1)
+                if (GameHistory[0].BoardID == 1)
                 {
-                    BoardGame = new Treblecross(history[0].BoardSize);
+                    BoardGame = new Treblecross(GameHistory[0].BoardSize);
                 }
                 else
                 {
@@ -262,36 +263,36 @@ namespace BoardGames
                 // create two players and load record by history file.
 
                 // create player 1 from history record.
-                Players[0] = humanFactory.CreatePlayer(history[0].PlayerId, history[0].PlayerName);
+                Players[0] = humanFactory.CreatePlayer(GameHistory[0].PlayerId, GameHistory[0].PlayerName);
                 //set player state
-                Players[0] = humanFactory.Setstate(Players[0],history[0].PlayerState);
+                Players[0] = humanFactory.Setstate(Players[0],GameHistory[0].PlayerState);
 
 
                 // create player 2 from history record and set the state.
-                if (history[0].opponentType == "Computer")
+                if (GameHistory[0].opponentType == "Computer")
                 {
-                    Players[1] = computerFactory.CreatePlayer(2, history[0].opponentName);
-                    Players[1] = computerFactory.Setstate(Players[1], history[0].opponentState);
+                    Players[1] = computerFactory.CreatePlayer(2, GameHistory[0].opponentName);
+                    Players[1] = computerFactory.Setstate(Players[1], GameHistory[0].opponentState);
                 }
 
                 else
                 {
-                    Players[1] = humanFactory.CreatePlayer(2, history[0].opponentName);
-                    Players[1] = humanFactory.Setstate(Players[1], history[0].opponentState);
+                    Players[1] = humanFactory.CreatePlayer(2, GameHistory[0].opponentName);
+                    Players[1] = humanFactory.Setstate(Players[1], GameHistory[0].opponentState);
                 }
 
                 //Start place the piece
-                foreach (var his in history)
+                foreach (var his in GameHistory)
                 {
                     BoardGame.Board.PlacePiece(his.MoveList.Col, his.MoveList.Row, BoardGame.BoardPiece);
                 }
 
                 //set player's state to decise who is next player
-                if (history[history.Count - 1].PlayerId == 1)
+                if (GameHistory[GameHistory.Count - 1].PlayerId == 1)
                 {
                     Players[0] = humanFactory.Setstate(Players[0], true);
 
-                    if(history[0].opponentType == "Computer")
+                    if(GameHistory[0].opponentType == "Computer")
                     {
                         Players[1] = computerFactory.Setstate(Players[1], false);
                     }
@@ -304,7 +305,7 @@ namespace BoardGames
                 {
                     Players[0] = humanFactory.Setstate(Players[0], false);
 
-                    if (history[0].opponentType == "Computer")
+                    if (GameHistory[0].opponentType == "Computer")
                     {
                         Players[1] = computerFactory.Setstate(Players[1], true);
                     }
@@ -316,7 +317,7 @@ namespace BoardGames
                 BoardGame.Board.PrintBoard();
 
                 //start playing game
-                PlayGame(history);
+                PlayGame();
             }
             else Console.WriteLine("No History Record.");
         }
@@ -327,9 +328,11 @@ namespace BoardGames
 
             PlayerFactory humanFactory = new HumanPlayerFactory();
 
+            GameHistory = new List<History>();
+
             const int PLAYERNUMBER = 2;
             Players = new Player[PLAYERNUMBER];
-            List<History> history = new List<History>();
+            
 
             int gameID = SelectGame();
 
@@ -367,8 +370,10 @@ namespace BoardGames
             //display current board
             BoardGame.Board.PrintBoard();
 
+
+
             //start playing game
-            PlayGame(history);
+            PlayGame();
 
         }
 
@@ -394,7 +399,7 @@ namespace BoardGames
             BoardGame.Board.PrintBoard();
         }
 
-        public void PlayGame(List<History> history)
+        public void PlayGame()
         {
             bool winner = false;
 
@@ -419,7 +424,7 @@ namespace BoardGames
 
                     PlayerMove(currentID);
 
-                    history = WriteMoveToRecords(history, Players[currentID].CurrentMove, currentID);
+                    WriteMoveToRecords(Players[currentID].CurrentMove, currentID);
 
                     winner = BoardGame.HasWinner();
 
@@ -437,7 +442,7 @@ namespace BoardGames
                             option = humanFactory.PlayerMenu();
                             // Players[currentID].PlayerMenu();
 
-                            HumanOperation(option, currentID, nextID, history);
+                            HumanOperation(option, currentID, nextID);
 
                             winner = BoardGame.HasWinner();
 
@@ -473,7 +478,7 @@ namespace BoardGames
             }
         }
         
-        public void HumanOperation(int option, int currentID, int nextID, List<History> history)
+        public void HumanOperation(int option, int currentID, int nextID )
         {
             History undo = new History();
 
@@ -486,12 +491,12 @@ namespace BoardGames
                     break;
                 //undo
                 case 2:
-                    if (history.Count() > 0)
+                    if (GameHistory.Count() > 0)
                     {
 
-                        undo = history[history.Count() - 1];
+                        undo = GameHistory[GameHistory.Count() - 1];
 
-                        history.RemoveAt(history.Count() - 1);
+                        GameHistory.RemoveAt(GameHistory.Count() - 1);
 
                         BoardGame.Board.RemovePiece(Players[currentID].CurrentMove.Col, Players[currentID].CurrentMove.Row);
 
@@ -513,7 +518,7 @@ namespace BoardGames
                             {
                                 PlayerMove(currentID);
 
-                                history = WriteMoveToRecords(history, Players[currentID].CurrentMove, currentID);
+                                WriteMoveToRecords(Players[currentID].CurrentMove, currentID);
 
                                 break;
                             }
@@ -523,7 +528,7 @@ namespace BoardGames
                             {
                                 BoardGame.Board.PlacePiece(undo.MoveList.Col, undo.MoveList.Row, BoardGame.BoardPiece);
 
-                                history.Add(undo);
+                                GameHistory.Add(undo);
 
                                 BoardGame.Board.PrintBoard();
 
@@ -547,7 +552,7 @@ namespace BoardGames
 
                     Players[currentID].ConfirmMove();
                     Players[nextID].InitializeState();
-                    fileController.SaveHistoryToFile(history);
+                    fileController.SaveHistoryToFile(GameHistory);
                     break;
 
                 //helping system 
@@ -579,16 +584,16 @@ namespace BoardGames
             return type.ToUpper();
         }
 
-        public void DisplayHistory(List<History> history)
-        {
-            foreach (var temp in history)
-            {
-                Console.WriteLine("ID #{0}:", temp.PlayerId);
-                Console.WriteLine("Name: {0}", temp.PlayerName);
-                Console.WriteLine("Move: {0}", temp.MoveList.Col);
-                Console.WriteLine("Game name: {0}", temp.BoardID);
-            }
-        }
+        // public void DisplayHistory(List<History> history)
+        // {
+        //     foreach (var temp in history)
+        //     {
+        //         Console.WriteLine("ID #{0}:", temp.PlayerId);
+        //         Console.WriteLine("Name: {0}", temp.PlayerName);
+        //         Console.WriteLine("Move: {0}", temp.MoveList.Col);
+        //         Console.WriteLine("Game name: {0}", temp.BoardID);
+        //     }
+        // }
     }
 
     public class History
