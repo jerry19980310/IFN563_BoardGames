@@ -3,7 +3,7 @@ using static BoardGames.Program;
 
 namespace BoardGames
 {
-    public interface IPlayer
+    public abstract class Player
     {
         public int ID { get; set; }
         public string Name { get; set; }
@@ -11,27 +11,29 @@ namespace BoardGames
         public bool State { get; set; }
         public Move CurrentMove { get; set; }
 
-        public void MakeMove(int size);
+        public abstract void MakeMove(int size);
 
-        public void ConfirmMove();
+        public void ConfirmMove()
+        {
+            State = true;
+        }
 
-        public void InitializeState();
+        public void InitializeState()
+        {
+            State = false;
+        }
 
-        public void SetState(bool state);
+        public void SetState(bool state)
+        {
+            State = state;
+        }
 
-        public int PlayerMenu();
     }
 
-    public class Human : IPlayer
+    public class Human : Player
     {
 
-        public int ID { get; set; }
-        public string Name { get; set; }
-        public string Type { get; set; }
-        public bool State { get; set; }
-        public Move CurrentMove { get; set; }
-
-        public void MakeMove(int size)
+        public override void MakeMove(int size)
         {
 
             bool isValid;
@@ -58,27 +60,58 @@ namespace BoardGames
 
         }
 
-        public void ConfirmMove()
-        {
-            State = true;
-        }
-
-        public void InitializeState()
-        {
-            State = false;
-        }
-
-        public void SetState(bool state)
-        {
-            State = state;
-        }
-
         public Human(int id, string name)
         {
             ID = id;
             Name = name;
             Type = "Human";
             State = false;
+        }
+
+    }
+
+    public class Computer : Player
+    {
+        public override void MakeMove(int size)
+        {
+            Random rand = new Random();
+
+            int position = rand.Next(size);
+
+            CurrentMove = new Move(position, 0);
+        }
+
+        public Computer(int id, string name)
+        {
+            ID = id;
+            Name = name;
+            Type = "Computer";
+            State = false;
+
+        }
+    }
+
+    public abstract class PlayerFactory
+    {
+
+        public abstract Player CreatePlayer(int id, string name);
+
+        public abstract Player Setstate(Player player, bool state);
+
+    }
+
+    public class HumanPlayerFactory: PlayerFactory
+    {
+        public override Player CreatePlayer(int id, string name)
+        {
+            return new Human(id, name);
+        }
+
+        public override Player Setstate(Player player, bool state)
+        {
+            player.SetState(state);
+
+            return player;
         }
 
         public int PlayerMenu()
@@ -102,90 +135,17 @@ namespace BoardGames
             }
         }
 
-    }
-
-    public class Computer : IPlayer
-    {
-
-        public int ID { get; set; }
-        public string Name { get; set; }
-        public string Type { get; set; }
-        public bool State { get; set; }
-        public Move CurrentMove { get; set; }
-
-        public void MakeMove(int size)
-        {
-            Random rand = new Random();
-
-            int position = rand.Next(size);
-
-            CurrentMove = new Move(position, 0);
-        }
-
-        public void ConfirmMove()
-        {
-            State = true;
-        }
-
-        public void InitializeState()
-        {
-            State = false;
-        }
-
-        public void SetState(bool state)
-        {
-            State = state;
-        }
-
-        public Computer(int id, string name)
-        {
-            ID = id;
-            Name = name;
-            Type = "Computer";
-            State = false;
-
-        }
-
-        public int PlayerMenu()
-        {
-            return 0;
-        }
-    }
-
-    public abstract class PlayerFactory
-    {
-
-        public abstract IPlayer CreatePlayer(int id, string name);
-
-        public abstract IPlayer Setstate(IPlayer player, bool state);
-
-    }
-
-    public class HumanPlayerFactory: PlayerFactory
-    {
-        public override IPlayer CreatePlayer(int id, string name)
-        {
-            return new Human(id, name);
-        }
-
-        public override IPlayer Setstate(IPlayer player, bool state)
-        {
-            player.SetState(state);
-
-            return player;
-        }
-
 
     }
 
     public class ComputerPlayerFactory : PlayerFactory
     {
-        public override IPlayer CreatePlayer(int id, string name)
+        public override Player CreatePlayer(int id, string name)
         {
             return new Computer(id, name);
         }
 
-        public override IPlayer Setstate(IPlayer player, bool state)
+        public override Player Setstate(Player player, bool state)
         {
             player.SetState(state);
 
@@ -197,13 +157,13 @@ namespace BoardGames
     {
         public FileController fileController = FileController.Instance;
 
-        public IPlayer[] Players;
+        public Player[] Players;
 
-        public IPlayer CurrentPlayer;
+        public Player CurrentPlayer;
 
         public BoardGame? BoardGame;
 
-        public IPlayer WhosTurn()
+        public Player WhosTurn()
         {
             foreach (var player in Players)
             {
@@ -283,7 +243,7 @@ namespace BoardGames
             PlayerFactory humanFactory = new HumanPlayerFactory();
 
             const int PLAYERNUMBER = 2;
-            Players = new IPlayer[PLAYERNUMBER];
+            Players = new Player[PLAYERNUMBER];
 
             //load history and place the piece by the recoard
             if (history.Count >= 1)
@@ -368,7 +328,7 @@ namespace BoardGames
             PlayerFactory humanFactory = new HumanPlayerFactory();
 
             const int PLAYERNUMBER = 2;
-            Players = new IPlayer[PLAYERNUMBER];
+            Players = new Player[PLAYERNUMBER];
             List<History> history = new List<History>();
 
             int gameID = SelectGame();
@@ -440,6 +400,8 @@ namespace BoardGames
 
             int option = 0;
 
+            HumanPlayerFactory humanFactory = new HumanPlayerFactory();
+
             while (!winner)
             {
                 CurrentPlayer = WhosTurn();
@@ -472,7 +434,8 @@ namespace BoardGames
                     {
                         do
                         {
-                            option = Players[currentID].PlayerMenu();
+                            option = humanFactory.PlayerMenu();
+                            // Players[currentID].PlayerMenu();
 
                             HumanOperation(option, currentID, nextID, history);
 
