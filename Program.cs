@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-using System.Text.Json;
-using System.Xml.Linq;
+﻿using System.Text.Json;
 using static BoardGames.Program;
 
 namespace BoardGames
@@ -434,14 +432,10 @@ namespace BoardGames
             }
 
             BoardGame.Board.PrintBoard();
-
-
         }
 
         public void PlayGame(List<History> history)
         {
-            bool isValid;
-
             bool winner = false;
 
             int option = 0;
@@ -480,8 +474,6 @@ namespace BoardGames
                         {
                             option = Players[currentID].PlayerMenu();
 
-                            History undo = new History();
-
                             HumanOperation(option, currentID, nextID, history);
 
                             winner = BoardGame.HasWinner();
@@ -511,22 +503,13 @@ namespace BoardGames
                         break;
                     }
 
-
-                    CurrentPlayer = WhosTurn();
-
-                    currentID = CurrentPlayer.ID - 1;
-
-                    if (currentID == 0) nextID = 1;
-
-                    else nextID = 0;
-
                 }
 
                 if (option == 3) break;
 
             }
         }
-
+        
         public void HumanOperation(int option, int currentID, int nextID, List<History> history)
         {
             History undo = new History();
@@ -589,7 +572,6 @@ namespace BoardGames
 
                             Console.WriteLine();
                         } while (!(choice == 1 || choice == 2));
-
 
                     }
 
